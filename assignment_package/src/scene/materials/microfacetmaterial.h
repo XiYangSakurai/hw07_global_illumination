@@ -5,24 +5,22 @@
 class MicrofacetMaterial : public Material
 {
 public:
-    MicrofacetMaterial(const Color3f &Kd, const Color3f &Ks,const Color3f &Kt,
+    MicrofacetMaterial(const Color3f &Kr, const Color3f &Kt,
                        float roughness, float indexOfRefraction,
                        const std::shared_ptr<QImage> &roughnessMap,
-                       const std::shared_ptr<QImage> &diffuseColorMap,
-                       const std::shared_ptr<QImage> &specularColorMap,
+                       const std::shared_ptr<QImage> &textureMapRefl,
+                       const std::shared_ptr<QImage> &textureMapTransmit,
                        const std::shared_ptr<QImage> &normalMap)
-             : Kd(Kd), Ks(Ks), Kt(Kt),roughness(roughness),indexOfRefraction(indexOfRefraction),
-               roughnessMap(roughnessMap), diffuseColorMap(diffuseColorMap), normalMap(normalMap)
+             : Kr(Kr), Kt(Kt),roughness(roughness),indexOfRefraction(indexOfRefraction),
+               roughnessMap(roughnessMap), textureMapRefl(textureMapRefl),textureMapTransmit(textureMapTransmit),
+               normalMap(normalMap)
          {}
 
          void ProduceBSDF(Intersection *isect) const;
 
 
      private:
-         Color3f Kd;                    // The diffuse spectral reflection of this material.
-                                        // This is just the base color of the material
-
-         Color3f Ks;                     // The color of the specular highlights
+         Color3f Kr;
 
          Color3f Kt;
 
@@ -31,8 +29,8 @@ public:
 
          float indexOfRefraction;
          std::shared_ptr<QImage> roughnessMap;
-         std::shared_ptr<QImage> diffuseColorMap;
-         std::shared_ptr<QImage> specularColorMap;
+         std::shared_ptr<QImage> textureMapRefl;
+         std::shared_ptr<QImage> textureMapTransmit;
          std::shared_ptr<QImage> normalMap;
 };
 

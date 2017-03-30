@@ -40,6 +40,7 @@ Color3f SpecularBTDF::Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &
     }
     if(!refract)
         return Color3f(0.0f);
+    if(AbsCosTheta(*wi)<FLT_EPSILON) return Color3f(0.0f);
     *pdf=1.0f;
     Color3f ft=T-T*fresnel->Evaluate(CosTheta(*wi));
     return ft/AbsCosTheta(*wi);

@@ -341,36 +341,6 @@ bool JSONReader::LoadMaterial(QJsonObject &material, const QStringRef &local_pat
     else if(QString::compare(type, QString("MicrofacetTransmissiveMaterial")) == 0)
     {
         std::shared_ptr<QImage> roughnessMap;
-        std::shared_ptr<QImage> textureMapDiffuse;
-        std::shared_ptr<QImage> textureMapSpecular;
-        std::shared_ptr<QImage> normalMap;
-        Color3f Kd = ToVec3(material["Kd"].toArray());
-        Color3f Ks = ToVec3(material["Ks"].toArray());
-        Color3f Kt = ToVec3(material["Kt"].toArray());
-        float eta = material["eta"].toDouble();
-        float roughness = material["roughness"].toDouble();
-        if(material.contains(QString("roughnessMap"))) {
-            QString img_filepath = local_path.toString().append(material["roughnessMap"].toString());
-            roughnessMap = std::make_shared<QImage>(img_filepath);
-        }
-        if(material.contains(QString("textureMapDiffuse"))) {
-            QString img_filepath = local_path.toString().append(material["textureMapDiffuse"].toString());
-            textureMapDiffuse = std::make_shared<QImage>(img_filepath);
-        }
-        if(material.contains(QString("textureMapSpecular"))) {
-            QString img_filepath = local_path.toString().append(material["textureMapSpecular"].toString());
-            textureMapSpecular = std::make_shared<QImage>(img_filepath);
-        }
-        if(material.contains(QString("normalMap"))) {
-            QString img_filepath = local_path.toString().append(material["normalMap"].toString());
-            normalMap = std::make_shared<QImage>(img_filepath);
-        }
-        auto result = std::make_shared<MicrofacetMaterial>(Kd, Ks,Kt, roughness,eta, roughnessMap, textureMapDiffuse, textureMapSpecular, normalMap);
-        mtl_map->insert(material["name"].toString(), result);
-    }
-    else if(QString::compare(type, QString("MicrofacetMaterial")) == 0)
-    {
-        std::shared_ptr<QImage> roughnessMap;
         std::shared_ptr<QImage> textureMap;
         std::shared_ptr<QImage> normalMap;
         Color3f Kt = ToVec3(material["Kt"].toArray());
@@ -381,14 +351,43 @@ bool JSONReader::LoadMaterial(QJsonObject &material, const QStringRef &local_pat
             roughnessMap = std::make_shared<QImage>(img_filepath);
         }
         if(material.contains(QString("textureMap"))) {
-            QString img_filepath = local_path.toString().append(material["textureMap"].toString());
+            QString img_filepath = local_path.toString().append(material["textureMapDiffuse"].toString());
             textureMap = std::make_shared<QImage>(img_filepath);
+        }       
+        if(material.contains(QString("normalMap"))) {
+            QString img_filepath = local_path.toString().append(material["normalMap"].toString());
+            normalMap = std::make_shared<QImage>(img_filepath);
+        }
+        auto result = std::make_shared<MicrofacetTransmissiveMaterial>(Kt, roughness,eta, roughnessMap, textureMap, normalMap);
+        mtl_map->insert(material["name"].toString(), result);
+    }
+    else if(QString::compare(type, QString("MicrofacetMaterial")) == 0)
+    {
+        std::shared_ptr<QImage> roughnessMap;
+        std::shared_ptr<QImage> textureMapRefl;
+        std::shared_ptr<QImage> textureMapTransmit;
+        std::shared_ptr<QImage> normalMap;
+        Color3f Kt = ToVec3(material["Kt"].toArray());
+        Color3f Kr = ToVec3(material["Kr"].toArray());
+        float eta = material["eta"].toDouble();
+        float roughness = material["roughness"].toDouble();
+        if(material.contains(QString("roughnessMap"))) {
+            QString img_filepath = local_path.toString().append(material["roughnessMap"].toString());
+            roughnessMap = std::make_shared<QImage>(img_filepath);
+        }
+        if(material.contains(QString("textureMapRefl"))) {
+            QString img_filepath = local_path.toString().append(material["textureMap"].toString());
+            textureMapRefl = std::make_shared<QImage>(img_filepath);
+        }
+        if(material.contains(QString("textureMapTransmit"))) {
+            QString img_filepath = local_path.toString().append(material["textureMap"].toString());
+            textureMapTransmit = std::make_shared<QImage>(img_filepath);
         }
         if(material.contains(QString("normalMap"))) {
             QString img_filepath = local_path.toString().append(material["normalMap"].toString());
             normalMap = std::make_shared<QImage>(img_filepath);
         }
-        auto result = std::make_shared<MicrofacetTransmissiveMaterial>(Kt,roughness, eta,roughnessMap, textureMap, normalMap);
+        auto result = std::make_shared<MicrofacetMaterial>(Kr,Kt,roughness, eta,roughnessMap, textureMapRefl,textureMapTransmit, normalMap);
         mtl_map->insert(material["name"].toString(), result);
     }
     else

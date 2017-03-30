@@ -6,7 +6,7 @@ Color3f MicrofacetBTDF::f(const Vector3f &wo, const Vector3f &wi) const
 
         Float cosThetaO = CosTheta(wo);
         Float cosThetaI = CosTheta(wi);
-        if (cosThetaI == 0 || cosThetaO == 0) return Color3f(0);
+        if (cosThetaI == 0.0f || cosThetaO == 0.0f) return Color3f(0.0f);
 
         // Compute wh for microfacet transmission
         Float eta = CosTheta(wo) > 0 ? (etaB / etaA) : (etaA / etaB);
@@ -16,12 +16,12 @@ Color3f MicrofacetBTDF::f(const Vector3f &wo, const Vector3f &wi) const
         //Color3f F = fresnel.Evaluate(Dot(wo, wh));
         Color3f F = fresnel->Evaluate(glm::dot(wo, wh));  //why not wi
 
-        Float sqrtDenom = glm::dot(wo, wh) + eta * glm::dot(wi, wh);
-
+        Float sqrtD = glm::dot(wo, wh) + eta * glm::dot(wi, wh);
+        if(fabs(sqrtD)<FLT_EPSILON) return Color3f(0.0f);
         return (Color3f(1.0f) - F) * T *
                std::abs(distribution->D(wh) * distribution->G(wo, wi) * eta * eta *
                         AbsDot(wi, wh) * AbsDot(wo, wh) /
-                        (cosThetaI * cosThetaO * sqrtDenom * sqrtDenom));
+                        (cosThetaI * cosThetaO * sqrtD * sqrtD));
 }
 
 Color3f MicrofacetBTDF::Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &xi, Float *pdf, BxDFType *sampledType) const
@@ -52,13 +52,14 @@ FLOAT MicrofacetBTDF::Pdf(const Vector3f &wo, const Vector3f &wi) const
 {
     //return 0.0f;
     if (SameHemisphere(wo, wi)) return 0;
-    //Compute ωh from ωo and ωi for microfacet transmission
+    //Compute wh from wo and wi for microfacet transmission
     Float eta = CosTheta(wo) > 0 ? (etaB / etaA) : (etaA / etaB);
     Vector3f wh = glm::normalize(wo + wi * eta);
     //Compute change of variables dwh_dwi for microfacet transmission
-    Float sqrtDenom = glm::dot(wo, wh) + eta * glm::dot(wi, wh);
+    Float sqrtD = glm::dot(wo, wh) + eta * glm::dot(wi, wh);
+    if(fabs(sqrtD)<FLT_EPSILON) return 0.0f;
     Float dwh_dwi =
-        std::abs((eta * eta * glm::dot(wi, wh)) / (sqrtDenom * sqrtDenom));
+        std::abs((eta * eta * glm::dot(wi, wh)) / (sqrtD * sqrtD));
     return distribution->Pdf(wo, wh) * dwh_dwi;
 
 }

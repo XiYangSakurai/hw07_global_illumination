@@ -21,7 +21,6 @@ MicrofacetTransmissiveMaterial: PT_MicrofacetTransmitBox.json
 ![](./02.png)
 
 MicrofacetMaterial: PT_MicrofacetGlassBallBox.json
-(But I dont know why that the reflection looks nearly no contribution.)
 
 ![](./03.png)
 
@@ -40,17 +39,26 @@ Custom Scenes:
 All rendered with 400 sample, 8 limit
 
 This scene contains three different kinds of transmissive materials, two specular(yellow sphere and small cube), one microfacet(bigger cube and green sphere).
+(scene1.jason)
 
 ![](./glass400.png)
 
-This scene has chrome material and transmissive materials.
+This scene has chrome material and transmissive materials. But there are so many fireflies.
+(scene2.jason)
 
 ![](./uniform400.png)
 
 This scene has different transmissive materials and matteMaterials.
-(I change the material of the ball from matte to glass)
-![](./basketman.png)
-![](./map.png)
+(scene3.jason)
 
+![](./scene3.png)
 
+This scene has a mesh obj and several materials(glass,microfacet glass, etc).
+(scene4.jason)
 
+![](./AAscene.png)
+
+This scene has a mirror, one glass ball and one mesh.
+(scene5.jason)
+
+![](./ball900-8.png)

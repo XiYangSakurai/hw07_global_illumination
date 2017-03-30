@@ -6,8 +6,8 @@ Color3f MicrofacetBRDF::f(const Vector3f &wo, const Vector3f &wi) const
     Float cosThetaO = AbsCosTheta(wo), cosThetaI = AbsCosTheta(wi);
     Vector3f wh = wi + wo;
     //Handle degenerate cases for microfacet reflection
-    if (cosThetaI == 0 || cosThetaO == 0) return Color3f(0.0f);
-    if (wh.x == 0 && wh.y == 0 && wh.z == 0) return Color3f(0.0f);
+    if (cosThetaI == 0.0f || cosThetaO == 0.0f) return Color3f(0.0f);
+    if (wh.x == 0.0f && wh.y == 0.0f && wh.z == 0.0f) return Color3f(0.0f);
 
     wh = glm::normalize(wh);
     Color3f F = fresnel->Evaluate(glm::dot(wi, wh));
@@ -34,7 +34,8 @@ float MicrofacetBRDF::Pdf(const Vector3f &wo, const Vector3f &wi) const
 {
     //TODO
     //return 0.f;
-    if (!SameHemisphere(wo, wi)) return 0;
+    if (!SameHemisphere(wo, wi)) return 0.0f;
     Vector3f wh = glm::normalize(wo + wi);
+    if(fabs(glm::dot(wo, wh))<FLT_EPSILON) return 0.0f;
     return distribution->Pdf(wo, wh) / (4 * glm::dot(wo, wh));
 }

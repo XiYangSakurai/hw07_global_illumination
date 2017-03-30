@@ -9,7 +9,16 @@ void MicrofacetMaterial::ProduceBSDF(Intersection *isect) const
 
     isect->bsdf = std::make_shared<BSDF>(*isect, indexOfRefraction);
 
-    Color3f color = Kt;
+    Color3f reflectColor = Kr;
+    if(this->textureMapRefl)
+    {
+        reflectColor *= Material::GetImageColor(isect->uv, this->textureMapRefl.get());
+    }
+    Color3f transmitColor = Kt;
+    if(this->textureMapTransmit)
+    {
+        transmitColor *= Material::GetImageColor(isect->uv, this->textureMapTransmit.get());
+    }
     if(this->normalMap)
     {
         isect->bsdf->normal = isect->bsdf->tangentToWorld *  Material::GetImageColor(isect->uv, this->normalMap.get());
@@ -18,13 +27,7 @@ void MicrofacetMaterial::ProduceBSDF(Intersection *isect) const
         CoordinateSystem(isect->bsdf->normal, &tangent, &bitangent);
         isect->bsdf->UpdateTangentSpaceMatrices(isect->bsdf->normal, tangent, bitangent);
     }
-    // Lambertian BRDF component
-    Color3f colorDiffuse = Kd;
-    if(this->diffuseColorMap)
-    {
-        colorDiffuse *= Material::GetImageColor(isect->uv, this->diffuseColorMap.get());
-    }
-    isect->bsdf->Add(new LambertBRDF(colorDiffuse));
+
 
     // Microfacet Specular BRDF component
     float rough = roughness;
@@ -39,14 +42,8 @@ void MicrofacetMaterial::ProduceBSDF(Intersection *isect) const
 //    rough = RoughnessToAlpha(rough);
     MicrofacetDistribution* distrib = new TrowbridgeReitzDistribution(rough, rough);
 
-    Color3f colorSpecular = Ks;
-    if(specularColorMap)
-    {
-        colorSpecular *= Material::GetImageColor(isect->uv, this->specularColorMap.get());
-    }
-
     //Fresnel* fresnel = new FresnelDielectric(1.5f, 1.f);
     //isect->bsdf->Add(new MicrofacetBRDF(Ks, distrib, fresnel));
-    isect->bsdf->Add(new MicrofacetBRDF(Ks, distrib, new FresnelDielectric(1.f, indexOfRefraction)));
-    isect->bsdf->Add(new MicrofacetBTDF(color,distrib,1.0,indexOfRefraction,new FresnelDielectric(1.f, indexOfRefraction)));
+    isect->bsdf->Add(new MicrofacetBRDF(reflectColor, distrib, new FresnelDielectric(1.f, indexOfRefraction)));
+    isect->bsdf->Add(new MicrofacetBTDF(transmitColor,distrib,1.0,indexOfRefraction,new FresnelDielectric(1.f, indexOfRefraction)));
 }

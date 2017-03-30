@@ -6,13 +6,20 @@
 float Triangle::Area() const
 {
     //TODO
-    return 0;
+    float S = 0.5f * glm::length(glm::cross(points[0] - points[1], points[0] - points[2]));
+    return S;
+    //return 0;
 }
 
 float Mesh::Area() const
 {
     //TODO
-    return 0;
+    float s(0.0f);
+    for(int i = 0; i < faces.size(); i++)
+    {
+        s+=faces[i]->Area();
+    }
+    return s;
 }
 
 Triangle::Triangle(const glm::vec3 &p1, const glm::vec3 &p2, const glm::vec3 &p3):
@@ -131,14 +138,16 @@ void Triangle::ComputeTriangleTBN(const Point3f &P, Normal3f *nor, Vector3f *tan
 //    float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
 //    Vector3f tangent = (deltaPos1 * deltaUV2.y   - deltaPos2 * deltaUV1.y)*r;
 //    Vector3f bitangent = (deltaPos2 * deltaUV1.x   - deltaPos1 * deltaUV2.x)*r;
-    Point2f triUV=GetUVCoordinates(P);
-    Vector3f pos1=P-points[1];
-    Vector3f pos2=P-points[2];
-    Vector2f uv1=triUV-uvs[1];
-    Vector2f uv2=triUV-uvs[2];
-    Vector3f tangent=(uv2.y*pos1-uv1.y*pos2)/(uv2.y*uv1.x-uv1.y*uv2.x);
-    Vector3f bitangent=(pos2-uv2.x*tangent)/uv2.y;
-
+//    Point2f triUV=GetUVCoordinates(P);
+//    Vector3f pos1=P-points[1];
+//    Vector3f pos2=P-points[2];
+//    Vector2f uv1=triUV-uvs[1];
+//    Vector2f uv2=triUV-uvs[2];
+//    Vector3f tangent=(uv2.y*pos1-uv1.y*pos2)/(uv2.y*uv1.x-uv1.y*uv2.x);
+//    Vector3f bitangent=(pos2-uv2.x*tangent)/uv2.y;
+    Vector3f tangent;
+    Vector3f bitangent;
+    CoordinateSystem(*nor,&tangent,&bitangent);
     *tan=glm::normalize(tangent);
     *bit=glm::normalize(bitangent);
 }
@@ -154,10 +163,23 @@ void Mesh::InitializeIntersection(Intersection *isect, float t, Point3f pLocal) 
 
 void Mesh::ComputeTBN(const Point3f &P, Normal3f *nor, Vector3f *tan, Vector3f *bit) const
 {
-    *nor = transform.invTransT() * (*nor);
+
     //TODO: Transform nor, tan, and bit into world space
-    //*tan=glm::normalize(Vector3f(transform.T()*glm::vec4(*tan,1.0f)));
-    //*bit=glm::normalize(Vector3f(transform.T()*glm::vec4(*bit,1.0f)));
+    for(int i=0;i<faces.size();i++)
+    {
+        Point3f points[3]=faces[i]->points;
+        float S = 0.5f * glm::length(glm::cross(points[0] - points[1], points[0] - points[2]));
+        float s1 = 0.5f * glm::length(glm::cross(P - points[1], P - points[2]))/S;
+        float s2 = 0.5f * glm::length(glm::cross(P - points[2], P - points[0]))/S;
+        float s3 = 0.5f * glm::length(glm::cross(P - points[0], P - points[1]))/S;
+        float sum = s1 + s2 + s3;
+
+        if(s1 >= 0 && s1 <= 1 && s2 >= 0 && s2 <= 1 && s3 >= 0 && s3 <= 1 && fequal(sum, 1.0f)){
+            faces[i]->ComputeTriangleTBN(P,nor,tan,bit,faces[i]->GetUVCoordinates(P));
+            break;
+        }
+    }
+    *nor = transform.invTransT() * (*nor);
     *tan=glm::normalize(transform.T3()*(*tan));
     *bit=glm::normalize(transform.T3()*(*bit));
 
@@ -233,7 +255,26 @@ void Mesh::LoadOBJ(const QStringRef &filename, const QStringRef &local_path)
 }
 Intersection Triangle::Sample(const Point2f &xi, Float *pdf) const
 {
-    return Intersection();
+    //return Intersection();
+    //Point2f b = UniformSampleTriangle(u);
+    Float su0 = std::sqrt(xi[0]);
+    Point2f b(1 - su0, xi[1] * su0);
+        Intersection it;
+        it.point = b[0] * points[0] + b[1] * points[1] + (1 - b[0] - b[1]) * points[2];
+        // Compute surface normal for sampled point on triangle
+        it.normalGeometric = glm::normalize(Normal3f(glm::cross(points[1] - points[0], points[2] - points[0])));
+        // Ensure correct orientation of the geometric normal; follow the same
+        // approach as was used in Triangle::Intersect().
+        if (planeNormal!=Normal3f(0.0f)) {
+            Normal3f ns(b[0] * normals[0] + b[1] * normals[1] +
+                        (1 - b[0] - b[1]) *normals[2]);
+            it.normalGeometric=(glm::dot(it.normalGeometric, ns) < 0.f) ? -it.normalGeometric : it.normalGeometric;
+        } /*else if (reverseOrientation ^ transformSwapsHandedness)
+            it.n *= -1;*/
+
+
+        *pdf = 1 / Area();
+        return it;
 }
 Intersection Mesh::Sample(const Point2f &xi, Float *pdf) const
 {
